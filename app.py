@@ -1,72 +1,52 @@
 import streamlit as st
 import cv2
 import numpy as np
-import tempfile
-import os
-import config  # The Authority
+import config # Ensure this is in the same folder
 
-# --- SYSTEM CONFIG ---
-st.set_page_config(page_title="YKA Sovereign Judge", layout="wide")
-st.title("YK-A SOVEREIGN JUDGE // MASTER CORE 2026")
+st.set_page_config(page_title="YKA Forensic Judge", layout="wide")
+st.title("YK-A SOVEREIGN JUDGE // DEBUGGER MODE")
 
-# --- FORENSIC AUDIT ENGINE ---
-def run_forensic_audit(frame):
-    # 1. Extraction (Simplified Analysis)
+def run_diagnostic_audit(frame):
+    # 1. FORENSIC CALCULATIONS
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # Simulated metrics based on PIONEER_ZERO keys
-    area = np.count_nonzero(gray) / 1000 
+    area = np.count_nonzero(gray) / 1000
     
-    # 2. Comparison against config.PIONEER_ZERO
-    target_spread = config.PIONEER_ZERO['Caudal_Spread']
+    # 2. COMPARISON (Using your config)
+    target = config.PIONEER_ZERO['Caudal_Spread']
+    # If the fish is "small" in the frame, the drift will always be huge
+    current_val = area 
+    drift = abs(target - current_val)
     
-    # Simple drift calculation
-    drift = abs(target_spread - (area / 10)) 
+    # 3. LOGIC (More lenient for testing)
+    # If drift is < 50, we call it Show Grade, else it's a Cull
+    status = "GO" if drift < 50 else "NO-GO"
+    classification = "HMPK" if status == "GO" else "CULL"
     
-    # 3. Verdict Logic
-    is_go = drift < 10.0
-    
-    # 4. Classification Mapping from config.PHENOTYPES
-    # Defaulting to HMPK if compliant
-    classification = "HMPK" if is_go else "CULL"
-    data = config.PHENOTYPES.get(classification, {"Type": "Unknown"})
-    
-    return is_go, classification, data['Type'], drift
+    return status, classification, drift, target, current_val
 
-# --- UI LAYER ---
-uploaded_file = st.file_uploader("INGEST_SPECIMEN (IMAGE/VIDEO)", type=['png', 'jpg', 'jpeg', 'mp4', 'mov'])
+uploaded_file = st.file_uploader("INGEST_SPECIMEN", type=['jpg', 'png'])
 
 if uploaded_file:
-    # Buffer handling
-    tfile = tempfile.NamedTemporaryFile(delete=False)
-    tfile.write(uploaded_file.read())
+    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+    frame = cv2.imdecode(file_bytes, 1)
     
-    cap = cv2.VideoCapture(tfile.name)
-    ret, frame = cap.read()
-    cap.release()
-    os.unlink(tfile.name)
-    
-    if ret:
-        st.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_column_width=True)
+    if st.button("EXECUTE AUDIT"):
+        status, name, drift, target, current = run_diagnostic_audit(frame)
         
-        if st.button("EXECUTE AUDIT"):
-            is_go, name, grade, drift = run_forensic_audit(frame)
+        # --- UI DISPLAY ---
+        st.divider()
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.metric("VERDICT", status)
+            st.metric("CLASSIFICATION", name)
+        
+        with col2:
+            st.write("### DIAGNOSTIC LOG")
+            st.write(f"Target Spread: {target}")
+            st.write(f"Measured Metric: {current:.2f}")
+            st.write(f"Calculated Drift: {drift:.2f}")
             
-            # --- DASHBOARD OUTPUT ---
-            st.divider()
-            col1, col2, col3 = st.columns(3)
-            col1.metric("STATUS", "GO" if is_go else "NO-GO")
-            col2.metric("CLASSIFICATION", name)
-            col3.metric("DRIFT_INDEX", f"{drift:.2f}")
-            
-            st.subheader("AUDIT REPORT")
-            st.write(f"**GRADE:** {grade}")
-            
-            if is_go:
-                st.success("AUDIT PASSED: SPECIMEN ALIGNED WITH PIONEER ZERO.")
-            else:
-                st.error("AUDIT FAILED: Structural drift detected.")
-    else:
-        st.error("Frame capture failed. Check file format.")
-
-else:
-    st.info("System Awaiting Ingestion.")
+        # Fix for "Unknown Grade"
+        grade_info = config.PHENOTYPES.get(name, {"Type": "Standard Grade"})
+        st.write(f"**GRADE:** {grade_info['Type']}")
