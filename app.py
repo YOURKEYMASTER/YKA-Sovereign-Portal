@@ -50,3 +50,30 @@ if uploaded_file:
         # Fix for "Unknown Grade"
         grade_info = config.PHENOTYPES.get(name, {"Type": "Standard Grade"})
         st.write(f"**GRADE:** {grade_info['Type']}")
+# --- ADD THIS TO YOUR APP.PY ---
+
+# 1. ADD A SIDEBAR CALIBRATION SLIDER
+st.sidebar.subheader("SYSTEM CALIBRATION")
+calibration_factor = st.sidebar.slider("Audit Sensitivity (Baseline)", 0.0, 500.0, 100.0)
+
+def run_diagnostic_audit(frame, cal_factor):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # Get the raw area
+    measured_area = np.count_nonzero(gray) / 10
+    
+    # We compare the fish to the "Calibration Factor" you set in the sidebar
+    # If the fish is close to your custom baseline, it's a GO
+    drift = abs(cal_factor - measured_area)
+    
+    # Threshold for "GO" (Now adjustable via the slider)
+    status = "GO" if drift < (cal_factor * 0.3) else "NO-GO" 
+    
+    return status, drift, measured_area
+
+# --- IN YOUR UI SECTION ---
+if st.button("EXECUTE AUDIT"):
+    status, drift, measured = run_diagnostic_audit(frame, calibration_factor)
+    
+    # Output
+    st.metric("VERDICT", status)
+    st.write(f"Measured Area: {measured:.2f} | Calibration Baseline: {calibration_factor}")
