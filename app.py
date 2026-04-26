@@ -1,83 +1,69 @@
 import streamlit as st
 import cv2
 import numpy as np
-import time
-import pandas as pd
 
-# --- SYSTEM CONFIG & AESTHETIC INJECTION ---
-st.set_page_config(page_title="YK-A Sovereign Portal", layout="wide", page_icon="☣️")
+# --- SYSTEM CONFIG ---
+st.set_page_config(page_title="YKA Forensic Judge", layout="wide")
+st.title("YK-A SOVEREIGN JUDGE // MASTER CORE 2026")
 
-st.markdown("""
-    <style>
-    /* TERMINAL OVERRIDE */
-    .stApp { background-color: #050505; color: #00FF41; font-family: 'Courier New', monospace; }
-    h1, h2, h3, h4 { color: #00FF41 !important; text-transform: uppercase; letter-spacing: 2px; }
-    
-    /* NEON COMPONENTS */
-    .stButton>button { border: 2px solid #00FF41 !important; background: transparent !important; color: #00FF41 !important; font-weight: bold; }
-    .stButton>button:hover { background: #00FF41 !important; color: #050505 !important; }
-    
-    /* DASHBOARD CARDS */
-    div[data-testid="stMetricValue"] { color: #00FF41 !important; font-size: 2rem !important; }
-    
-    /* SCAN LINE ANIMATION (SIMULATED) */
-    .scan-line { width: 100%; height: 2px; background: #00FF41; box-shadow: 0 0 10px #00FF41; margin-bottom: 20px; }
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- ENGINE LOGIC ---
-def forensic_scan(frame):
-    # Simulated high-intensity analysis
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    area = cv2.countNonZero(gray) / 100  # Proxy for biometric complexity
-    perimeter = np.random.uniform(150, 450) # Simulated edge variance
-    return area, perimeter
-
-# --- DASHBOARD LAYOUT ---
-st.title(">>> YK-A SOVEREIGN_JUDGE // V15 // LIVE")
-st.markdown('<div class="scan-line"></div>', unsafe_allow_html=True)
-
-col1, col2 = st.columns([1, 2])
-
-with col1:
-    uploaded_file = st.file_uploader("INGEST_SPECIMEN", type=['png', 'jpg', 'jpeg'])
-    if uploaded_file:
-        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-        frame = cv2.imdecode(file_bytes, 1)
-        st.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_column_width=True)
+# --- FORENSIC ENGINES ---
+def get_specimen_classification(area, perimeter):
+    """Derives nomenclature based on geometric anchors."""
+    if area > 2000:
+        return "HMPK (Halfmoon Plakat) - Show Grade"
+    elif area > 1000:
+        return "Plakat - Standard"
     else:
-        st.warning("SYSTEM: WAITING FOR INGESTION...")
+        return "Specimen - Juvenile/Sub-Standard"
 
-with col2:
-    if uploaded_file and 'frame' in locals() or uploaded_file:
-        if st.button("INITIATE FORENSIC SCAN"):
-            with st.spinner("ANALYZING_GEOMETRIC_ANCHORS..."):
-                time.sleep(1.5)
-                area, perimeter = forensic_scan(frame)
-                
-                # Dynamic Feedback Layout
-                m1, m2, m3 = st.columns(3)
-                m1.metric("BIOMETRIC_AREA", f"{area:.1f}px")
-                m2.metric("EDGE_VARIANCE", f"{perimeter:.1f}")
-                m3.metric("INTEGRITY", "99.8%")
-                
-                st.write("---")
-                st.subheader("THE SHOKUNIN VERDICT")
-                
-                if area > 100:
-                    st.success("STATUS: [GO] // GEOMETRY ALIGNED // ARCHITECT APPROVED")
-                else:
-                    st.error("STATUS: [NO-GO] // GEOMETRIC DRIFT DETECTED // ISOLATE SPECIMEN")
-        else:
-            st.info("PRESS INITIATE TO BEGIN FORENSIC AUDIT.")
-    else:
-        st.write("AWAITING DATA INPUT...")
+def run_diagnostic(area, purity):
+    """Aggregates failure reasons and determines verdict."""
+    reasons = []
+    
+    # Threshold Checks
+    if area < 500:
+        reasons.append("Insufficient Geometric Mass (Area < 500px)")
+    if purity < 99.8:
+        reasons.append(f"Metallic Purity Index {purity:.1f}% (Required: >99.8%)")
+    if purity > 105:
+        reasons.append("Chromatic Saturation Alert (Over-Saturation Detected)")
+        
+    status = "NO-GO" if reasons else "GO"
+    return status, reasons
 
-# --- NODE STATUS SIDEBAR ---
-with st.sidebar:
-    st.header("COLLECTIVE NODES")
-    nodes = ["OMNI", "VEKTOR-Q", "HAZEL", "LEX"]
-    for node in nodes:
-        st.write(f"🟢 {node} : ACTIVE")
+# --- UI LAYER ---
+uploaded_file = st.file_uploader("INGEST_SPECIMEN_DATA", type=['png', 'jpg', 'jpeg'])
+
+if uploaded_file is not None:
+    # Processing
+    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+    frame = cv2.imdecode(file_bytes, 1)
+    
+    # Forensic Calculation (Mocked values for demo, replaced with your logic)
+    # Ensure these are replaced with your actual node analysis
+    area = np.count_nonzero(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)) / 100
+    purity = 95.0 # Example failure value
+    
+    # Run Logic
+    status, reasons = run_diagnostic(area, purity)
+    classification = get_specimen_classification(area, purity)
+    
+    # --- OUTPUT SCHEMA ---
     st.divider()
-    st.caption("MASTER_CORE_2026 // NO_DRIFT_DETECTED")
+    
+    # 1. Naming & Classification
+    st.subheader("SPECIMEN IDENTIFICATION")
+    st.info(f"**CLASSIFICATION:** {classification}")
+    
+    # 2. Verdict & Reasoning
+    st.subheader("THE SHOKUNIN VERDICT")
+    if status == "GO":
+        st.success(f"STATUS: {status} | SPECIMEN ALIGNED WITH PIONEER ZERO")
+    else:
+        st.error(f"STATUS: {status} | AUDIT FAILED")
+        st.write("**FAILURE LOG:**")
+        for reason in reasons:
+            st.write(f"- ⚠️ {reason}")
+
+else:
+    st.warning("System: Awaiting Forensic Ingestion.")
