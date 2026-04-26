@@ -1,20 +1,34 @@
 import streamlit as st
+import cv2
 import numpy as np
+import tempfile
 
-# IMMUTABLE MATH ANCHORS
-CAUDAL_OPTIMAL = 180.3
-SPINE_OPTIMAL = 0.0
-HEAD_OPTIMAL = 145.0
-
+# ARCHITECT CONFIGURATION
 st.set_page_config(page_title="YKA Sovereign Portal", layout="wide")
 st.title("YKA_SOVEREIGN_V15_HARDENED")
 
-uploaded_file = st.file_uploader("Upload Specimen", type=['jpg', 'png'])
+# SIDEBAR FORENSIC CONTROLS
+st.sidebar.header("Forensic Parameters")
+st.sidebar.write("System Status: Online")
+caudal_sensitivity = st.sidebar.slider("Caudal Sensitivity", 0, 100, 50)
+st.sidebar.info("Protocols initialized for biological/geometric analysis.")
+
+# INGESTION LAYER
+uploaded_file = st.file_uploader("Upload Specimen", type=['png', 'jpg', 'jpeg', 'mp4', 'mov', 'avi'])
 
 if uploaded_file is not None:
-    st.write("### [RAW FORENSICS]")
-    st.write(f"**SPINE_ANGLE:** {SPINE_OPTIMAL}° (Target)")
-    st.write(f"**CAUDAL_SPREAD:** {CAUDAL_OPTIMAL}° (Target)")
+    # FORENSIC IDENTIFICATION
+    file_type = uploaded_file.type
     
-    st.info("[SYSTEM]: Awaiting Code-Verification of geometry.")
-    st.success("[THE SHOKUNIN VERDICT]: Awaiting Data Input.")
+    if file_type.startswith('image'):
+        st.image(uploaded_file, caption="Specimen Ingested", use_column_width=True)
+        st.write("### [SYSTEM]: Image Specimen detected. Awaiting extraction.")
+        
+    elif file_type.startswith('video'):
+        st.video(uploaded_file)
+        st.write("### [SYSTEM]: Video Specimen detected. Initializing frame buffer.")
+    
+    # SYSTEM FEEDBACK
+    st.success("[SHOKUNIN VERDICT]: Awaiting geometric data calculation.")
+else:
+    st.warning("System: Awaiting Specimen Input.")
