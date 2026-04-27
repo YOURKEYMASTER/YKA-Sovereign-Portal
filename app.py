@@ -1,79 +1,37 @@
 import streamlit as st
-import cv2
-import numpy as np
-import config # Ensure this is in the same folder
+import google.generativeai as genai
+from PIL import Image
+import os
 
-st.set_page_config(page_title="YKA Forensic Judge", layout="wide")
-st.title("YK-A SOVEREIGN JUDGE // DEBUGGER MODE")
+# 1. SETUP: Configure the Brain
+# NOTE: Set your API Key in Streamlit Secrets, NOT directly in code
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-def run_diagnostic_audit(frame):
-    # 1. FORENSIC CALCULATIONS
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    area = np.count_nonzero(gray) / 1000
-    
-    # 2. COMPARISON (Using your config)
-    target = config.PIONEER_ZERO['Caudal_Spread']
-    # If the fish is "small" in the frame, the drift will always be huge
-    current_val = area 
-    drift = abs(target - current_val)
-    
-    # 3. LOGIC (More lenient for testing)
-    # If drift is < 50, we call it Show Grade, else it's a Cull
-    status = "GO" if drift < 50 else "NO-GO"
-    classification = "HMPK" if status == "GO" else "CULL"
-    
-    return status, classification, drift, target, current_val
+st.title("YK-A SOVEREIGN // V15 FORENSIC SCANNER")
 
-uploaded_file = st.file_uploader("INGEST_SPECIMEN", type=['jpg', 'png'])
+# 2. INPUT: File Uploader
+uploaded_file = st.file_uploader("Upload Specimen Image", type=["jpg", "jpeg", "png"])
 
-if uploaded_file:
-    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-    frame = cv2.imdecode(file_bytes, 1)
-    
-    if st.button("EXECUTE AUDIT"):
-        status, name, drift, target, current = run_diagnostic_audit(frame)
-        
-        # --- UI DISPLAY ---
-        st.divider()
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.metric("VERDICT", status)
-            st.metric("CLASSIFICATION", name)
-        
-        with col2:
-            st.write("### DIAGNOSTIC LOG")
-            st.write(f"Target Spread: {target}")
-            st.write(f"Measured Metric: {current:.2f}")
-            st.write(f"Calculated Drift: {drift:.2f}")
+if uploaded_file is not None:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Specimen Loaded", use_container_width=True)
+
+    # 3. LOGIC: The Forensic Prompt
+    if st.button("RUN AI FORENSIC SCAN"):
+        with st.spinner("Analyzing phenotypes..."):
+            prompt = """
+            You are an expert International Betta Congress (IBC) Judge.
+            Analyze this image and provide:
+            1. IBC Scoring (0-100)
+            2. Classification (Pet Grade / Breeder Grade / Show Grade)
+            3. Forensic Findings (Finnage, Symmetry, Color saturation)
+            Keep the response technical, cold, and precise.
+            """
             
-        # Fix for "Unknown Grade"
-        grade_info = config.PHENOTYPES.get(name, {"Type": "Standard Grade"})
-        st.write(f"**GRADE:** {grade_info['Type']}")
-# --- ADD THIS TO YOUR APP.PY ---
-
-# 1. ADD A SIDEBAR CALIBRATION SLIDER
-st.sidebar.subheader("SYSTEM CALIBRATION")
-calibration_factor = st.sidebar.slider("Audit Sensitivity (Baseline)", 0.0, 500.0, 100.0)
-
-def run_diagnostic_audit(frame, cal_factor):
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # Get the raw area
-    measured_area = np.count_nonzero(gray) / 10
-    
-    # We compare the fish to the "Calibration Factor" you set in the sidebar
-    # If the fish is close to your custom baseline, it's a GO
-    drift = abs(cal_factor - measured_area)
-    
-    # Threshold for "GO" (Now adjustable via the slider)
-    status = "GO" if drift < (cal_factor * 0.3) else "NO-GO" 
-    
-    return status, drift, measured_area
-
-# --- IN YOUR UI SECTION ---
-if st.button("EXECUTE AUDIT"):
-    status, drift, measured = run_diagnostic_audit(frame, calibration_factor)
-    
-    # Output
-    st.metric("VERDICT", status)
-    st.write(f"Measured Area: {measured:.2f} | Calibration Baseline: {calibration_factor}")
+            # Send image and prompt to Gemini
+            response = model.generate_content([prompt, image])
+            
+            # 4. OUTPUT: Display results
+            st.subheader("FORENSIC REPORT")
+            st.write(response.text)
