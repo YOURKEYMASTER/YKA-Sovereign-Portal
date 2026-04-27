@@ -3,7 +3,7 @@ import google.generativeai as genai
 from PIL import Image
 
 # 1. FORENSIC ENGINE CONFIGURATION
-API_KEY = "PASTE_YOUR_API_KEY_HERE"  # Keep the quotes!
+API_KEY = "AIzaSyBL7pB9xF1dpOklwGmrj8oosPGgNt7agLc"  # Keep the quotes!
 genai.configure(api_key=API_KEY)
 
 # Alethia Omega System Instructions
