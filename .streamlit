@@ -1,1 +1,28 @@
+import streamlit as st
+import google.generativeai as genai
+from PIL import Image
 
+# 1. THE BYPASS: Direct API Injection
+# Paste your key directly between the quotes below
+MY_API_KEY = "PASTE_YOUR_ACTUAL_API_KEY_HERE"
+
+genai.configure(api_key=MY_API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+# 2. UI Setup
+st.title("YK-A SOVEREIGN // V16 DIRECT")
+
+uploaded_file = st.file_uploader("Upload Specimen", type=["jpg", "jpeg", "png"])
+
+if uploaded_file:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Specimen Loaded", use_container_width=True)
+
+    if st.button("RUN AI FORENSIC SCAN"):
+        with st.spinner("Analyzing phenotypes..."):
+            prompt = """
+            You are an expert Betta judge. Analyze this fish.
+            Provide: IBC Score (0-100), Classification, and Forensic Notes.
+            """
+            response = model.generate_content([prompt, image])
+            st.write(response.text)
