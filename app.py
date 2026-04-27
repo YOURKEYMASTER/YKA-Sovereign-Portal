@@ -35,3 +35,47 @@ if uploaded_file is not None:
             # 4. OUTPUT: Display results
             st.subheader("FORENSIC REPORT")
             st.write(response.text)
+import streamlit as st
+import google.generativeai as genai
+from PIL import Image
+
+# 1. SETUP: Configuration
+# Ensure you have your API key set in Streamlit Secrets
+try:
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+except Exception:
+    st.error("API Key not found. Please set 'GOOGLE_API_KEY' in Streamlit Secrets.")
+    st.stop()
+
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+st.title("YK-A SOVEREIGN // V15 FORENSIC")
+
+# 2. INPUT: Upload
+uploaded_file = st.file_uploader("Upload Specimen", type=["jpg", "jpeg", "png"])
+
+if uploaded_file:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Specimen Loaded", use_container_width=True)
+
+    # 3. LOGIC: The Forensic Protocol
+    if st.button("RUN AI FORENSIC SCAN"):
+        with st.spinner("Analyzing phenotypes..."):
+            try:
+                # The "Neural Bridge" Instruction
+                prompt = """
+                You are a professional Betta fish judge. 
+                Analyze this fish for: 
+                1. Symmetry (0-100%)
+                2. Finnage (1-10)
+                3. Color (1-10)
+                4. Grade (Pet, Breeder, or Show)
+                5. Provide a cold, precise forensic report.
+                """
+                response = model.generate_content([prompt, image])
+                
+                # 4. OUTPUT
+                st.subheader("FORENSIC REPORT")
+                st.write(response.text)
+            except Exception as e:
+                st.error(f"Analysis Failed: {e}")
