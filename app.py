@@ -2,22 +2,29 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 
-# ==============================================================================
-# CALIBRATION SECTION: UPDATE THIS VARIABLE BASED ON YOUR 'model_audit.py' RESULT
-# If your audit said 'models/gemini-1.5-pro', put 'gemini-1.5-pro' here.
-MODEL_NAME = "gemini-1.5-pro" 
-# ==============================================================================
-
+# 1. SETUP
 st.set_page_config(page_title="Alethia Omega Forensic Portal", layout="wide")
-
 st.title("YK-A // ALETHIA OMEGA FORENSIC PORTAL")
-st.sidebar.header("System Calibration")
 
+# 2. CALIBRATION (If gemini-1.5-pro fails, try 'gemini-pro')
+MODEL_NAME = "gemini-1.5-pro" 
+
+# 3. SIDEBAR
+st.sidebar.header("System Calibration")
 api_key = st.sidebar.text_input("Enter Gemini API Key", type="password")
 
+# 4. FORENSIC ENGINE
 def run_forensic_audit(image, api_key):
     genai.configure(api_key=api_key)
-    # Using the configurable MODEL_NAME variable
+    
+    # Debug: Print available models to your terminal console for diagnosis
+    # Check your terminal (where you ran 'streamlit run') for this list
+    print("--- DIAGNOSTIC: AVAILABLE MODELS ---")
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            print(f"AVAILABLE: {m.name}")
+            
+    # Initialize the model
     model = genai.GenerativeModel(MODEL_NAME)
     
     system_instruction = """
@@ -29,31 +36,28 @@ def run_forensic_audit(image, api_key):
     3. Coloration Audit (Saturation/Iridescence)
     4. IBC Scorecard (Form/Color/Condition - 0 to 100 scale)
     5. Final Verdict (Pet/Breeder/Show Class)
-    Output in clean, structured Markdown. Be data-driven.
+    Output in clean, structured Markdown.
     """
     
     response = model.generate_content([system_instruction, image])
     return response.text
 
+# 5. UI
 uploaded_file = st.file_uploader("Upload Specimen", type=["jpg", "png", "jpeg"])
 
 if uploaded_file:
     image = Image.open(uploaded_file)
     st.image(image, caption="Specimen Ingested", use_container_width=True)
     
-    st.write("---")
-    
     if st.button("EXECUTE FORENSIC ANALYSIS"):
         if not api_key:
             st.error("System Failure: API Key Required.")
         else:
-            with st.spinner("Executing Alethia Omega Protocol..."):
-                try:
+            try:
+                with st.spinner("Executing Alethia Omega Protocol..."):
                     result = run_forensic_audit(image, api_key)
                     st.subheader("FORENSIC REPORT")
                     st.markdown(result)
-                except Exception as e:
-                    st.error(f"Engine Failure: {str(e)}")
-                    st.info(f"Check your API Key settings. Current Target Model: {MODEL_NAME}")
-else:
-    st.info("System Online. Awaiting Specimen Ingestion.")
+            except Exception as e:
+                st.error(f"Engine Failure: {str(e)}")
+                st.info(f"The system failed to call {MODEL_NAME}. Check your terminal for the 'DIAGNOSTIC' list and update the MODEL_NAME variable in app.py to a model listed as 'AVAILABLE'.")
