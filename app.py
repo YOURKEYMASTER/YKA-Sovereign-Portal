@@ -3,6 +3,7 @@ import google.generativeai as genai
 from PIL import Image
 
 # 1. DIRECT CONFIG (No subfolders)
+# Replace YOUR_ACTUAL_API_KEY_HERE with your key from AI Studio
 API_KEY = "YOUR_ACTUAL_API_KEY_HERE"
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
@@ -14,6 +15,7 @@ uploaded_file = st.file_uploader("Upload Specimen", type=["jpg", "jpeg", "png"])
 
 if uploaded_file:
     image = Image.open(uploaded_file)
+    # This uses the new container width parameter to stop the deprecation warning
     st.image(image, caption="Specimen Loaded", use_container_width=True)
 
     if st.button("RUN AI FORENSIC SCAN"):
